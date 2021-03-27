@@ -63,13 +63,13 @@
             "MLN/USD"
         ],
         "pair_blacklist": [
-			"DOGE/USD",
-			"TBTC/USD",
-			"XRP/USD",
+            "DOGE/USD",
+            "TBTC/USD",
+            "XRP/USD",
             "DAI/USD",
             "PAXG/USD",
             "USDT/USD",
-			"USDC/USD",
+            "USDC/USD",
             "EUR/USD",
             "GBP/USD",
             "AUD/USD",
@@ -80,7 +80,7 @@
         ]
     },
     "pairlists": [
-		{"method": "StaticPairList"}
+        {"method": "StaticPairList"}
     ],
     "telegram": {
         "enabled": true,
