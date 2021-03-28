@@ -68,7 +68,6 @@ class Solipsis3Hyp(IHyperOpt):
                     (params['inf-pct-adr-bot'] * dataframe[f"adr_{inf_timeframe}"]))
                 )
 
-            # Base Timeframe
             conditions.append(
                 (dataframe['rmi-dn-trend'] == 1) &
                 (dataframe['rmi-slow'] >= params['base-rmi-slow']) &
@@ -81,7 +80,8 @@ class Solipsis3Hyp(IHyperOpt):
                     (dataframe[f"{stake_currency}_rmi"] < params['xtra-base-stake-rmi']) | 
                     (dataframe[f"{custom_fiat}_rmi"] > params['xtra-base-fiat-rmi'])
                 )
-                conditions.append(dataframe[f"{stake_currency}_rmi_{inf_timeframe}"] < params['xtra-inf-stake-rmi'])
+                conditions.append(dataframe[f"{stake_currency}_rmi_{inf_timeframe}"] > params['xtra-inf-stake-rmi'])
+            
             else:
                 if btc_in_whitelist == False:
                     conditions.append(
