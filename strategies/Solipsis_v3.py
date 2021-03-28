@@ -618,7 +618,7 @@ class Solipsis3_BTC(Solipsis3):
         "1440": 0
     }
 
-# Sub-strategy with parameters specific to BTC stake
+# Sub-strategy with parameters specific to ETH stake
 class Solipsis3_ETH(Solipsis3):
 
     timeframe = '1h'
