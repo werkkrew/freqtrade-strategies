@@ -10,6 +10,11 @@ from Solipsis_v3 import Solipsis3 as Solipsis
 *** THIS IS A CHILD STRATEGY, REQUIRES IMPORT OF PARENT STRATEGY **
 *** CURRENTLY MAPS TO PARENT STRATEGY: Solipsis_v3 ***
 
+NOTE: Child strategy seems to have issues being used for hyperopt, I am not completely sure why.
+      Call hyperopts using the parent strategy (e.g. --strategy Solipsis3 --hyperopt Solipsis3Hyp )
+      The child strategy is best used for keeping the parent strategy clean when using custom_pair_params
+      in live trading and backtest, but is not required.
+
 Example for Custom Pair Params:
 
     custom_pair_params = [
