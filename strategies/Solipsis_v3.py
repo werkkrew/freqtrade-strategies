@@ -605,3 +605,27 @@ class Solipsis3(IStrategy):
                 active_trade[0].adjust_min_max_rates(current_rate)
 
         return trade_data
+
+# Sub-strategy with parameters specific to BTC stake
+class Solipsis3_BTC(Solipsis3):
+
+    timeframe = '15m'
+    inf_timeframe = '4h'
+
+    minimal_roi = {
+        "0": 0.01,
+        "720": 0.005,
+        "1440": 0
+    }
+
+# Sub-strategy with parameters specific to BTC stake
+class Solipsis3_ETH(Solipsis3):
+
+    timeframe = '1h'
+    inf_timeframe = '4h'
+
+    minimal_roi = {
+        "0": 0.01,
+        "1440": 0.005,
+        "2880": 0
+    }
