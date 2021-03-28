@@ -172,7 +172,7 @@ class Solipsis3Hyp(IHyperOpt):
 
         return [
             Categorical([True], name='droi_enabled'),
-            # Categorical([True], name='droi_enabled'),
+            # Categorical([True, False], name='droi_enabled'),
             Integer(200, 500, name='droi_profit_factor'),
             Integer(0, 50, name='droi_rmi_start'),
             Integer(50, 90, name='droi_rmi_end'),
