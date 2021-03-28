@@ -529,17 +529,17 @@ class Solipsis3(IStrategy):
         custom_stop = self.custom_stop
         dynamic_roi = self.dynamic_roi
   
-        if self.custom_pair_params:
+        if self.custom_pair_params and pair != 'backtest':
             custom_params = next(item for item in self.custom_pair_params if pair in item['pairs'])
-            if custom_params['buy_params']:
+            if 'buy_params' in custom_params:
                 buy_params = custom_params['buy_params']
-            if custom_params['sell_params']:
+            if 'sell_params' in custom_params:
                 sell_params = custom_params['sell_params']
-            if custom_params['minimal_roi']:
+            if 'minimal_roi' in custom_params:
                 custom_stop = custom_params['minimal_roi']
-            if custom_params['custom_stop']:
+            if 'custom_stop' in custom_params:
                 custom_stop = custom_params['custom_stop']
-            if custom_params['dynamic_roi']:
+            if 'dynamic_roi' in custom_params:
                 dynamic_roi = custom_params['dynamic_roi']
             
         if params == 'buy':
