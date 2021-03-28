@@ -115,7 +115,7 @@ BTC -
 class Solipsis_BTC(Solipsis):
 
     timeframe = '15m'
-    inf_timeframe = '4h'
+    inf_timeframe = '1h'
 
     minimal_roi = {
         "0": 0.01,
@@ -184,8 +184,14 @@ ETH -
 # Sub-strategy with parameters specific to ETH stake
 class Solipsis_ETH(Solipsis):
 
-    timeframe = '1h'
-    inf_timeframe = '4h'
+    timeframe = '15m'
+    inf_timeframe = '1h'
+
+    minimal_roi = {
+        "0": 0.01,
+        "720": 0.005,
+        "1440": 0
+    }
 
     # Global for not in custom_pair_params
     buy_params = {
