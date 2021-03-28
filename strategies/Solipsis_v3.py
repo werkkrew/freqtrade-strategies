@@ -25,7 +25,7 @@ import custom_indicators as cta
 
 """
 Solipsis - By @werkkrew and @JimmyNixx
-This strategy is an evolution of our previous framework "Schism" which we are happy to share by request.  While Schism has been superceded by this
+This strategy is an evolution of our previous framework "Schism" which can be found in this repository.  While Schism has been superceded by this
 strategy there may still be valuable examples and ideas in it. 
 
 We ask for nothing in return except that if you make changes which bring you greater success than what has been provided, you share those ideas back to us
@@ -34,7 +34,9 @@ and the rest of the community. Also, please don't nag us with a million question
 We take no responsibility for any success or failure you have using this strategy.
 
 Apes together strong.
-
+This is not financial advice.
+We like the stock.
+Where lambo?
 
 *************
 This is a very advanced strategy.  It requires a lot of configuration, optimization, and understanding of how it works and what it does before use.
@@ -72,7 +74,7 @@ STRATEGY NOTES:
       a lot of variables being hyperopted and it may take a lot of epochs to find the right settings.
     - It is possible to hyperopt the custom stoploss and dynamic ROI settings, however a change to the freqtrade code is needed.  I have done
       this in a fork on github and I use it personally, but this code will likely never get merged upstream so use with extreme caution.
-      (github.com/werkkrew/freqtrade branch: hyperopt)
+      (https://github.com/werkkrew/freqtrade/tree/hyperopt)
     - Hyperopt Notes:
         - Hyperopting buy/custom-stoploss/dynamic-roi together takes a LOT of repeat 1000 epoch runs to get optimal results.  There
           are a ton of variables moving around and often times the reported best epoch is not desirable.
@@ -522,25 +524,28 @@ class Solipsis3(IStrategy):
     Custom Methods
     """
     # Get parameters for various settings on a per pair or group of pairs basis
+    # This function can probably be simplified dramatically
     def get_pair_params(self, pair: str, params: str) -> Dict:
-        buy_params = self.buy_params
-        sell_params = self.sell_params
-        minimal_roi = self.minimal_roi
+        buy_params, sell_params = self.buy_params, self.sell_params
+        minimal_roi, dynamic_roi = self.minimal_roi, self.dynamic_roi
         custom_stop = self.custom_stop
-        dynamic_roi = self.dynamic_roi
   
-        if self.custom_pair_params and pair != 'backtest':
-            custom_params = next(item for item in self.custom_pair_params if pair in item['pairs'])
-            if 'buy_params' in custom_params:
-                buy_params = custom_params['buy_params']
-            if 'sell_params' in custom_params:
-                sell_params = custom_params['sell_params']
-            if 'minimal_roi' in custom_params:
-                custom_stop = custom_params['minimal_roi']
-            if 'custom_stop' in custom_params:
-                custom_stop = custom_params['custom_stop']
-            if 'dynamic_roi' in custom_params:
-                dynamic_roi = custom_params['dynamic_roi']
+        if self.custom_pair_params:
+            # custom_params = next(item for item in self.custom_pair_params if pair in item['pairs'])
+            for item in self.custom_pair_params:
+                if 'pairs' in item and pair in item['pairs']:
+                    custom_params = item 
+                    if 'buy_params' in custom_params:
+                        buy_params = custom_params['buy_params']
+                    if 'sell_params' in custom_params:
+                        sell_params = custom_params['sell_params']
+                    if 'minimal_roi' in custom_params:
+                        custom_stop = custom_params['minimal_roi']
+                    if 'custom_stop' in custom_params:
+                        custom_stop = custom_params['custom_stop']
+                    if 'dynamic_roi' in custom_params:
+                        dynamic_roi = custom_params['dynamic_roi']
+                    break
             
         if params == 'buy':
             return buy_params

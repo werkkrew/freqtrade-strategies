@@ -10,6 +10,16 @@ from Solipsis_v3 import Solipsis3 as Solipsis
 *** THIS IS A CHILD STRATEGY, REQUIRES IMPORT OF PARENT STRATEGY **
 *** CURRENTLY MAPS TO PARENT STRATEGY: Solipsis_v3 ***
 
+Example for Custom Pair Params:
+
+    custom_pair_params = [
+        {
+            'pairs': ('ABC/XYZ', 'DEF/XYZ'),
+            'buy_params': {},
+            'sell_params': {},
+            'minimal_roi': {}
+        }
+
 LAST OPTIMIZED:
 
 EXCHANGE: 

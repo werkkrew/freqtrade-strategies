@@ -150,6 +150,7 @@ class Solipsis3Hyp(IHyperOpt):
 
     # None of this will work unless you pull the fork werkkrew/freqtrade and switch to branch hyperopt
     # Which you almost certainly do *not* want to do.
+    # https://github.com/werkkrew/freqtrade/tree/hyperopt
     @staticmethod
     def generate_dynamic_roi(params: Dict) -> Dict[int, float]:
 
@@ -207,9 +208,9 @@ class Solipsis3Hyp(IHyperOpt):
     def custom_stoploss_space() -> List[Dimension]:
 
         return [
-            Integer(500, 1440, name='cstp_decay_time'),
-            Integer(0, 360, name='cstp_decay_delay'),
-            Real(-0.30, -0.20, name='cstp_decay_start'),
+            Integer(300, 1440, name='cstp_decay_time'),
+            Integer(0, 180, name='cstp_decay_delay'),
+            Real(-0.35, -0.15, name='cstp_decay_start'),
             Real(-0.05, 0, name='cstp_decay_end'),
             Real(0.01, 0.04, name='cstp_cur_min_diff'),
             Real(-0.05, 0, name='cstp_cur_threshold'),
