@@ -323,7 +323,7 @@ class Solipsis3(IStrategy):
                 (dataframe[f"{self.config['stake_currency']}_rmi"] < params['xtra-base-stake-rmi']) | 
                 (dataframe[f"{self.custom_fiat}_rmi"] > params['xtra-base-fiat-rmi'])
             )
-            conditions.append(dataframe[f"{self.config['stake_currency']}_rmi_{self.inf_timeframe}"] > params['xtra-inf-stake-rmi'])
+            conditions.append(dataframe[f"{self.config['stake_currency']}_rmi_{self.inf_timeframe}"] < params['xtra-inf-stake-rmi'])
         # Extra conditions for BTC/STAKE if not in whitelist
         else:
             pairs = self.dp.current_whitelist()
@@ -610,7 +610,7 @@ class Solipsis3(IStrategy):
 class Solipsis3_BTC(Solipsis3):
 
     timeframe = '15m'
-    inf_timeframe = '4h'
+    inf_timeframe = '1h'
 
     minimal_roi = {
         "0": 0.01,
@@ -621,11 +621,11 @@ class Solipsis3_BTC(Solipsis3):
 # Sub-strategy with parameters specific to ETH stake
 class Solipsis3_ETH(Solipsis3):
 
-    timeframe = '1h'
-    inf_timeframe = '4h'
+    timeframe = '15m'
+    inf_timeframe = '1h'
 
     minimal_roi = {
         "0": 0.01,
-        "1440": 0.005,
-        "2880": 0
+        "720": 0.005,
+        "1440": 0
     }
