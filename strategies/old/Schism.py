@@ -2,6 +2,7 @@ import numpy as np
 import talib.abstract as ta
 import freqtrade.vendor.qtpylib.indicators as qtpylib
 import arrow
+
 from freqtrade.strategy.interface import IStrategy
 from freqtrade.strategy import merge_informative_pair
 from typing import Dict, List, Optional, Tuple
@@ -13,9 +14,42 @@ from technical.indicators import RMI
 from statistics import mean
 from cachetools import TTLCache
 
+import pandas as pd  
+pd.options.mode.chained_assignment = None
+
 
 """
-TODO: 
+*** THIS IS YOUR LIVE TRADING COPY ***
+
+CURRENTLY MAPS TO DEV STRATEGY: Schism-v2
+
+LAST UPDATED: 
+
+USD - 03/18/2021
+BTC - 03/19/2021
+ETH - 03/19/2021
+
+HYPEROPT RESULT:
+
+USD -
+    5m / 1h
+    2785 trades. 2537/204/44 Wins/Draws/Losses. Avg profit   0.82%. Total profit  1973.03736697 USD ( 2281.86Σ%). Avg duration 657.0 min. Objective: -173.38994
+BTC - 
+    15m / 1h
+    354 trades. 330/24/0 Wins/Draws/Losses. Avg profit   1.26%. Total profit  0.00474543 BTC ( 447.08Σ%). Avg duration 840.0 min. Objective: -129.98745
+ETH -
+    15m / 4h
+    1402 trades. 1292/78/32 Wins/Draws/Losses. Avg profit   1.11%. Total profit  0.27495824 ETH ( 1460.97Σ%). Avg duration 1249.1 min. Objective: -103.97574
+    
+CHANGES FROM DEV DEFAULTS:
+
+ROI - NONE
+
+STOPLOSS - NONE
+
+GENERAL SETTINGS
+Temporarily setting this to stem some recent losses:
+use_sell_signal = False
 
 """
 
@@ -23,46 +57,34 @@ class Schism(IStrategy):
     """
     Strategy Configuration Items
     """
-
-    # Global Buy/Sell Params
-    buy_params = {
-        'bounce-lookback': 5,
-        'down-inf-rsi': 64,
-        'down-mp': 55,
-        'down-rmi-fast': 31,
-        'down-rmi-slow': 16,
-        'up-inf-rsi': 64,
-        'up-rmi-fast': 31,
-        'up-rmi-slow': 16,
-        'xinf-stake-rmi': 67,
-        'xtf-fiat-rsi': 17,
-        'xtf-stake-rsi': 57
-    }
-
-    sell_params = {
-        'rmi-high': 50,
-        'rmi-low': 10
-    }
-
-    # Pair Specific Buy/Sell Params
-    buy_params_FOO = {}
-    sell_params_FOO = {}
-
-
-    # Other Global Settings
     timeframe = '5m'
     inf_timeframe = '1h'
 
+    buy_params = {
+        'inf-pct-adr': 0.83534,
+        'inf-rsi': 57,
+        'mp': 64,
+        'rmi-fast': 49,
+        'rmi-slow': 24,
+        'xinf-stake-rmi': 45,
+        'xtf-fiat-rsi': 28,
+        'xtf-stake-rsi': 90
+    }
+
+    sell_params = {}
+
     minimal_roi = {
-        "0": 0.10,
-        "10": 0.05,
-        "30": 0.025,
-        "60": 0.01,
+        "0": 0.05,
+        "10": 0.025,
+        "20": 0.015,
+        "30": 0.01,
+        "720": 0.005,
         "1440": 0
     }
 
     stoploss = -0.30
 
+    # Recommended
     use_sell_signal = False
     sell_profit_only = False
     ignore_roi_if_buy_signal = True
@@ -82,7 +104,6 @@ class Schism(IStrategy):
         pairs = self.dp.current_whitelist()
         informative_pairs = [(pair, self.inf_timeframe) for pair in pairs]
         
-        """
         # add additional informative pairs based on certain stakes
         if self.config['stake_currency'] in ('BTC', 'ETH'):
             for pair in pairs:
@@ -95,7 +116,6 @@ class Schism(IStrategy):
             stake_fiat = f"{self.config['stake_currency']}/{self.custom_fiat}"
             informative_pairs += [(stake_fiat, self.timeframe)]
             informative_pairs += [(stake_fiat, self.inf_timeframe)]
-        """
 
         return informative_pairs
 
@@ -103,9 +123,10 @@ class Schism(IStrategy):
     Indicator Definitions
     """ 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
+        # Populate/update the trade data if there is any, set trades to false if not live/dry
         self.custom_trade_info[metadata['pair']] = self.populate_trades(metadata['pair'])
     
-        # Relative Momentum Index
+        # Set up primary indicators
         dataframe['rmi-slow'] = RMI(dataframe, length=21, mom=5)
         dataframe['rmi-fast'] = RMI(dataframe, length=8, mom=4)
 
@@ -119,7 +140,6 @@ class Schism(IStrategy):
         dataframe['rmi-up-trend'] = np.where(dataframe['rmi-up'].rolling(3, min_periods=1).sum() >= 2,1,0)      
         dataframe['rmi-dn-trend'] = np.where(dataframe['rmi-dn'].rolling(3, min_periods=1).sum() >= 2,1,0)
 
-        """
         # Informative for STAKE/FIAT and COIN/FIAT on default timeframe, only relevant if stake currency is BTC or ETH
         if self.config['stake_currency'] in ('BTC', 'ETH'):
             coin, stake = metadata['pair'].split('/')
@@ -137,11 +157,14 @@ class Schism(IStrategy):
 
             dataframe[f"{stake}_rsi"] = ta.RSI(stake_fiat_tf, timeperiod=14)
             dataframe[f"{stake}_rmi_{self.inf_timeframe}"] = RMI(stake_fiat_inf_tf, length=21, mom=5)
-        """
 
         # Informative indicators for current pair on inf_timeframe
         informative = self.dp.get_pair_dataframe(pair=metadata['pair'], timeframe=self.inf_timeframe)
         informative['rsi'] = ta.RSI(informative, timeperiod=14)
+
+        informative['1d_high'] = informative['close'].rolling(24).max()
+        informative['3d_low'] = informative['close'].rolling(72).min()
+        informative['adr'] = informative['1d_high'] - informative['3d_low']
 
         dataframe = merge_informative_pair(dataframe, informative, self.timeframe, self.inf_timeframe, ffill=True)
 
@@ -154,26 +177,6 @@ class Schism(IStrategy):
         params = self.get_pair_params(metadata['pair'], 'buy')
         trade_data = self.custom_trade_info[metadata['pair']]
         conditions = []
-
-        # Set up a pre-buy condition that we sort of "cache"
-        dataframe['bounce-pending'] = np.where(
-            (dataframe[f"rsi_{self.inf_timeframe}"] < params['down-inf-rsi']) &
-            (dataframe['rmi-dn-trend'] == 1) &
-            (dataframe['rmi-slow'] > params['down-rmi-slow']) &
-            (dataframe['rmi-fast'] < params['down-rmi-fast']) &
-            (dataframe['mp'] <= params['down-mp']),
-            1,0
-        )
-
-        # Capture the price where we got the signal that a bounce would happen
-        dataframe['bounce-price'] = np.where(
-            dataframe['bounce-pending'] == 1, 
-            dataframe['close'], 
-            dataframe['close'].rolling(params['bounce-lookback'], min_periods=1).func() # 4 min/max/mean?
-        )
-
-        # Count how many times our pre-bounce happned in the last X candles
-        dataframe['bounce-range'] = np.where(dataframe['bounce-pending'].rolling(params['bounce-lookback'], min_periods=1).sum() >= 1,1,0) 
 
         # Persist a buy signal for existing trades to make use of ignore_roi_if_buy_signal = True
         # when this buy signal is not present a sell can happen according to the defined ROI table
@@ -191,25 +194,24 @@ class Schism(IStrategy):
         else:
             # Primary buy triggers
             conditions.append(
-                (dataframe[f"rsi_{self.inf_timeframe}"] > params['up-inf-rsi']) &
-                (dataframe['bounce-range'] == 1) &
-                (dataframe['rmi-up-trend'] == 1) &
-                # 3(dataframe['rmi-slow'] < params['up-rmi-slow']) &
-                # 3(dataframe['rmi-fast'] > params['up-rmi-fast']) &
-                (dataframe['close'] > dataframe['bounce-price'])
+                # "buy the dip" based buy signal using momentum pinball and downward RMI
+                (dataframe['close'] <= dataframe[f"3d_low_{self.inf_timeframe}"] + (params['inf-pct-adr'] * dataframe[f"adr_{self.inf_timeframe}"])) &
+                (dataframe[f"rsi_{self.inf_timeframe}"] >= params['inf-rsi']) &
+                (dataframe['rmi-dn-trend'] == 1) &
+                (dataframe['rmi-slow'] >= params['rmi-slow']) &
+                (dataframe['rmi-fast'] <= params['rmi-fast']) &
+                (dataframe['mp'] <= params['mp'])
             )
 
-            """
             # If the stake is BTC or ETH apply additional conditions
             if self.config['stake_currency'] in ('BTC', 'ETH'):
                 # default timeframe conditions
                 conditions.append(
-                    (dataframe[f"{self.config['stake_currency']}_rsi"] > params['xtf-stake-rsi']) | 
-                    (dataframe[f"{self.custom_fiat}_rsi"] < params['xtf-fiat-rsi'])
+                    (dataframe[f"{self.config['stake_currency']}_rsi"] < params['xtf-stake-rsi']) | 
+                    (dataframe[f"{self.custom_fiat}_rsi"] > params['xtf-fiat-rsi'])
                 )
                 # informative timeframe conditions
                 conditions.append(dataframe[f"{self.config['stake_currency']}_rmi_{self.inf_timeframe}"] < params['xinf-stake-rmi'])
-            """
 
         # Anything below here applies to persisting and new buy signal
         conditions.append(dataframe['volume'].gt(0))
@@ -222,28 +224,38 @@ class Schism(IStrategy):
         return dataframe
 
     """
-    Sell Trigger Signals:
-        In this strategy all sells for profit happen according to ROI
-        This sell signal is designed only as a "dynamic stoploss"
+    Sell Trigger Signals
     """
     def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         params = self.get_pair_params(metadata['pair'], 'sell')
         trade_data = self.custom_trade_info[metadata['pair']]
         conditions = []
 
-        # add additional conditions based on time and profit
+        # In this strategy all sells for profit happen according to ROI
+        # This sell signal is designed only as a "dynamic stoploss"
+
+        # if we are in an active trade for this pair
         if trade_data['active_trade']:     
-            # give some wiggle room for the trade to go negative a little bit before selling
             # grow from -0.03 -> 0 after 300 minutes starting immediately
             loss_cutoff = self.linear_growth(-0.03, 0, 0, 300, trade_data['open_minutes'])
 
             # if we are at a loss, consider what the trend looks and preempt the stoploss
             conditions.append(
                 (trade_data['current_profit'] < loss_cutoff) & 
-                (trade_data['current_profit'] > self.stoploss) 
+                (trade_data['current_profit'] > self.stoploss) &  
+                (dataframe['rmi-dn-trend'] == 1) &
+                (dataframe['volume'].gt(0))
             )
+            
+            # if the peak profit was positive at some point but never reached ROI, set a higher cross point for exit
+            if trade_data['peak_profit'] > 0:
+                conditions.append(qtpylib.crossed_below(dataframe['rmi-slow'], 50))
+            # if the trade was always negative, the bounce we expected didn't happen
+            else:
+                conditions.append(qtpylib.crossed_below(dataframe['rmi-slow'], 10))
 
-            # if we have other trades, consider their profit and the # of free slots in the sell
+            # if there are other open trades in addition to this one, consider the average profit 
+            # across them all and how many free slots we have in our sell decision
             if trade_data['other_trades']:
                 if trade_data['free_slots'] > 0:
                     """
@@ -252,21 +264,16 @@ class Schism(IStrategy):
                     1 slot = 1/1 * -0.04 = -0.04 -> only allow sells if avg_other_proift above -0.04
                     4 slot = 1/4 * -0.04 = -0.01 -> only allow sells is avg_other_profit above -0.01
                     """
-                    max_market_down = -0.04 # 5%
+                    max_market_down = -0.04 
                     hold_pct = (1/trade_data['free_slots']) * max_market_down
                     conditions.append(trade_data['avg_other_profit'] >= hold_pct)
                 else:
                     # if were out of slots, allow the biggest losing trade to sell regardless of avg profit
                     conditions.append(trade_data['biggest_loser'] == True)
 
-        conditions.append((dataframe['rmi-dn-trend'] == 1))
-        # provide multiple cross thresholds in case we are coming from a higher point
-        conditions.append(
-            qtpylib.crossed_below(dataframe['rmi-slow'], params['rmi-high']) |
-            qtpylib.crossed_below(dataframe['rmi-slow'], params['rmi-low'])
-        )
-
-        conditions.append(dataframe['volume'].gt(0))
+        # Impossible condition to satisfy the bot when it looks here and theres no active trade
+        else:
+            conditions.append(dataframe['volume'].lt(0))
                            
         if conditions:
             dataframe.loc[
@@ -276,7 +283,7 @@ class Schism(IStrategy):
         return dataframe
 
     """
-    Custom Methods
+    Super Legit Custom Methods
     """
     # Populate trades_data from the database
     def populate_trades(self, pair: str) -> dict:
@@ -355,11 +362,8 @@ class Schism(IStrategy):
         self.custom_current_price_cache[pair] = rate
         return rate
 
-    """
-    Simple linear growth function: 
-        Starts at X and grows to Y after A minutes (starting after B miniutes)
-        f(t) = X + (rate * t), where rate = (Y - X) / (B - A)
-    """
+    # linear growth, starts at X and grows to Y after A minutes (starting after B miniutes)
+    # f(t) = X + (rate * t), where rate = (Y - X) / (A - B)
     def linear_growth(self, start: float, end: float, start_time: int, end_time: int, trade_time: int) -> float:
         time = max(0, trade_time - start_time)
         rate = (end - start) / (end_time - start_time)
@@ -369,7 +373,7 @@ class Schism(IStrategy):
     Allow for buy/sell override parameters per pair. Testing, might remove.
     TODO:
         If good: make this more robust so you never have to edit this method.
-        Consider: per-pair ROI work if it seems worthwhile?
+        Consider: per-pair ROI if it seems worthwhile?
     """
     def get_pair_params(self, pair: str, side: str) -> Dict:
         buy_params = self.buy_params
@@ -426,24 +430,27 @@ Anything not explicity defined here will follow the settings in the base strateg
 # Sub-strategy with parameters specific to BTC stake
 class Schism_BTC(Schism):
 
-    timeframe = '1h'
-    inf_timeframe = '4h'
-
-    buy_params = {
-        'inf-rsi': 64,
-        'mp': 55,
-        'rmi-fast': 31,
-        'rmi-slow': 16,
-        'xinf-stake-rmi': 67,
-        'xtf-fiat-rsi': 17,
-        'xtf-stake-rsi': 57
-    }
+    timeframe = '15m'
+    inf_timeframe = '1h'
 
     minimal_roi = {
         "0": 0.05,
-        "240": 0.025,
-        "1440": 0.01,
-        "4320": 0
+        "30": 0.025,
+        "60": 0.015,
+        "90": 0.01,
+        "1440": 0.005,
+        "2880": 0
+    }
+
+    buy_params = {
+        'inf-pct-adr': 0.80616,
+        'inf-rsi': 14,
+        'mp': 43,
+        'rmi-fast': 33,
+        'rmi-slow': 16,
+        'xinf-stake-rmi': 29,
+        'xtf-fiat-rsi': 49,
+        'xtf-stake-rsi': 53
     }
 
     use_sell_signal = False
@@ -451,24 +458,27 @@ class Schism_BTC(Schism):
 # Sub-strategy with parameters specific to ETH stake
 class Schism_ETH(Schism):
 
-    timeframe = '1h'
+    timeframe = '15m'
     inf_timeframe = '4h'
-
-    buy_params = {
-        'inf-rsi': 13,
-        'inf-stake-rmi': 69,
-        'mp': 40,
-        'rmi-fast': 42,
-        'rmi-slow': 17,
-        'tf-fiat-rsi': 15,
-        'tf-stake-rsi': 92
-    }
 
     minimal_roi = {
         "0": 0.05,
-        "240": 0.025,
-        "1440": 0.01,
-        "4320": 0
+        "30": 0.025,
+        "60": 0.015,
+        "90": 0.01,
+        "1440": 0.005,
+        "2880": 0
+    }
+
+    buy_params = {
+        'inf-pct-adr': 0.74476,
+        'inf-rsi': 43,
+        'mp': 44,
+        'rmi-fast': 32,
+        'rmi-slow': 29,
+        'xinf-stake-rmi': 49,
+        'xtf-fiat-rsi': 45,
+        'xtf-stake-rsi': 67
     }
 
     use_sell_signal = False
