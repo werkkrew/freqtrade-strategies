@@ -321,3 +321,26 @@ def bollinger_bands(stock_price, window_size, num_of_std):
     rolling_std = stock_price.rolling(window=window_size).std()
     lower_band = rolling_mean - (rolling_std * num_of_std)
     return np.nan_to_num(rolling_mean), np.nan_to_num(lower_band)
+
+
+"""
+Market Cipher, from @Drafy in Freqtrade discord
+"""
+def market_cipher(self, dataframe) -> DataFrame:
+    #dataframe['volume_rolling'] = dataframe['volume'].shift(14).rolling(14).mean()
+    #
+    dataframe['ap'] = (dataframe['high'] + dataframe['low'] + dataframe['close']) / 3
+    dataframe['esa'] = ta.EMA(dataframe['ap'], self.n1)
+    dataframe['d'] = ta.EMA((dataframe['ap']-dataframe['esa']).abs(), self.n1)
+    dataframe['ci'] = ( dataframe['ap']-dataframe['esa'] ) / (0.015 * dataframe['d'])
+    dataframe['tci'] = ta.EMA(dataframe['ci'], self.n2)
+
+    dataframe['wt1'] = dataframe['tci']
+    dataframe['wt2'] = ta.SMA(dataframe['wt1'],4)
+    dataframe['wt1-wt2'] = dataframe['wt1'] - dataframe['wt2']
+
+    dataframe['crossed_above'] = qtpylib.crossed_above(dataframe['wt2'], dataframe['wt1'])
+    dataframe['crossed_below'] = qtpylib.crossed_below(dataframe['wt2'], dataframe['wt1'])
+    #dataframe['slope_gd'] = ta.LINEARREG_ANGLE(dataframe['crossed_above'] * dataframe['wt2'], 10)
+
+    return dataframe
