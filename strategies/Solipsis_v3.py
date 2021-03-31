@@ -394,7 +394,7 @@ class Solipsis3(IStrategy):
 
         # if we might be on a rebound, move the stoploss to the low point or keep it where it was
         if (current_profit > min_profit) or roc > 0 or rmi_slow >= params['rmi-trend']:
-            if profit_diff > params['cur-min-diff']:
+            if profit_diff > params['cur-min-diff'] and current_profit < 0:
                 return min_profit
             return -1
         
