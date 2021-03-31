@@ -15,6 +15,7 @@ private/
 # Strategies that are not mine
 other/
 sample/
+private/
 
 ########################################
 # General Python .gitignore below
