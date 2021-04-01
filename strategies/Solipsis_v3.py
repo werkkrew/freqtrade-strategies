@@ -97,11 +97,11 @@ STRATEGY NOTES:
 TODO: 
     - Continue to hunt for a better all around buy signal.
     - Tweak ROI Trend Ride
-        - Verify ROI trend ride correctly reports profit during backtest.
+        - Adjust pullback to be more dynamic, seems to get out a tad bit early in many cases.
+        - Consider a way to identify very large/fast spikes when RMI has not yet reacted to stay in past ROI point.
     - Further enchance and optimize custom stop loss
         - Continue to evaluate good circumstances to bail and sell vs hold on for recovery
-    - Develop a PR to fully support trades database in backtest so we can go back to previous Schism methodology for buy/sell
-      rather than hacking the crap out of the ROI methods?
+        - Curent implementation seems to work pretty well but feel like there is room for improvement.
     - Develop a PR to fully support hyperopting the custom_stoploss and dynamic_roi spaces?
 """
 
