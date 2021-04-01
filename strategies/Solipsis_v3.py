@@ -512,14 +512,6 @@ class Solipsis3(IStrategy):
             return True
         return False
 
-    def confirm_trade_entry(self, pair: str, order_type: str, amount: float, rate: float, time_in_force: str, **kwargs) -> bool:
-        bid_strategy = self.config.get('bid_strategy', {})
-        ob = self.dp.orderbook(pair, 1)
-        current_price = ob[f"{bid_strategy['price_side']}s"][0][0]
-        if current_price > rate * 1.01:
-            return False
-        return True
-
     """
     Custom Methods
     """
