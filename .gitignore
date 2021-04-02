@@ -1,9 +1,10 @@
 # Freqtrade Excludes
 
 # Private configs
-config-pairs*.json
+config-*.json
 config-trade*.json
 config-dry*.json
+config-backtest*.json
 
 # Data
 data/
