@@ -399,7 +399,10 @@ class Solipsis3(IStrategy):
                 return stoploss_from_open(min_profit, current_profit)
             return 1
 
-        return min(max(stoploss_from_open(decay_stoploss, current_profit), 0.001), current_stoploss)
+        if current_profit < 0:
+            return min(max(stoploss_from_open(decay_stoploss, current_profit), 0.001), current_stoploss)
+
+        return 1
 
     """
     Freqtrade ROI Overload for dynamic ROI functionality
