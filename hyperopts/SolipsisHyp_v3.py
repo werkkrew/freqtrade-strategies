@@ -180,7 +180,7 @@ class Solipsis3Hyp(IHyperOpt):
             Integer(360, 1440, name='droi_grow_time'),
             Categorical(['table'], name='droi_fallback'),
             # Categorical(['table', 'atr', 'roc', 'roc-table', 'atr-table'], name='droi_fallback'),
-            Real(0.0, 0.015, name='droi_min_roc_atr')
+            Real(0.005, 0.015, name='droi_min_roc_atr')
         ]
 
 
@@ -217,8 +217,8 @@ class Solipsis3Hyp(IHyperOpt):
             Real(-0.05, 0, name='cstp_roc_bail'),
             Integer(30, 70, name='cstp_rmi_trend'),
             Categorical(['atr', 'immediate'], name='cstp_bail_how'),
-            Categorical([False], name='cstp_pos_trail'),
-            # Categorical([True, False], name='cstp_pos_trail'),
+            # Categorical([False], name='cstp_pos_trail'),
+            Categorical([True, False], name='cstp_pos_trail'),
             Real(0.0, 0.03, name='cstp_pos_threshold'),
             Real(0.005, 0.03, name='cstp_trail_dist')
         ]

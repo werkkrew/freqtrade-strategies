@@ -4,7 +4,7 @@ import freqtrade.vendor.qtpylib.indicators as qtpylib
 import arrow
 
 from freqtrade.strategy.interface import IStrategy
-from freqtrade.strategy import merge_informative_pair
+from freqtrade.strategy import merge_informative_pair, stoploss_from_open
 from typing import Dict, List, Optional, Tuple
 from pandas import DataFrame, Series
 from functools import reduce
@@ -357,7 +357,7 @@ class Solipsis3(IStrategy):
     Custom Stoploss
     """ 
     def custom_stoploss(self, pair: str, trade: 'Trade', current_time: datetime, current_rate: float, current_profit: float, **kwargs) -> float:
-        params = self.get_pair_params(pair, 'custom_stop')
+        params = self.custom_stop
         
         trade_dur = int((current_time.timestamp() - trade.open_date_utc.timestamp()) // 60)
         min_profit = trade.calc_profit_ratio(trade.min_rate)
@@ -388,17 +388,17 @@ class Solipsis3(IStrategy):
                 if params['bail-how'] == 'atr':
                     return ((current_rate - atr)/current_rate) - 1
                 elif params['bail-how'] == 'immediate':
-                    return current_rate
+                    return 0.001
                 else:
-                    return decay_stoploss
+                    return max(stoploss_from_open(decay_stoploss, current_profit), 0.001)
 
         # if we might be on a rebound, move the stoploss to the low point or keep it where it was
         if (current_profit > min_profit) or roc > 0 or rmi_slow >= params['rmi-trend']:
             if profit_diff > params['cur-min-diff'] and current_profit < 0:
-                return min_profit
-            return -1
-        
-        return decay_stoploss
+                return stoploss_from_open(min_profit, current_profit)
+            return 1
+
+        return max(stoploss_from_open(decay_stoploss, current_profit), 0.001)
 
     """
     Freqtrade ROI Overload for dynamic ROI functionality
