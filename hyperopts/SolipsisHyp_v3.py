@@ -178,8 +178,8 @@ class Solipsis3Hyp(IHyperOpt):
             Integer(50, 90, name='droi_rmi_end'),
             Integer(0, 180, name='droi_grow_delay'),
             Integer(360, 1440, name='droi_grow_time'),
-            Categorical(['table'], name='droi_fallback'),
-            # Categorical(['table', 'atr', 'roc', 'roc-table', 'atr-table'], name='droi_fallback'),
+            # Categorical(['table'], name='droi_fallback'),
+            Categorical(['table', 'atr', 'roc', 'roc-table', 'atr-table'], name='droi_fallback'),
             Real(0.005, 0.015, name='droi_min_roc_atr')
         ]
 
