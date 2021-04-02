@@ -363,6 +363,7 @@ class Solipsis3(IStrategy):
         min_profit = trade.calc_profit_ratio(trade.min_rate)
         max_profit = trade.calc_profit_ratio(trade.max_rate)
         profit_diff = current_profit - min_profit
+        current_stoploss = trade.stop_loss
 
         decay_stoploss = cta.linear_growth(params['decay-start'], params['decay-end'], params['decay-delay'], params['decay-time'], trade_dur)
 
@@ -390,7 +391,7 @@ class Solipsis3(IStrategy):
                 elif params['bail-how'] == 'immediate':
                     return 0.001
                 else:
-                    return max(stoploss_from_open(decay_stoploss, current_profit), 0.001)
+                    return min(max(stoploss_from_open(decay_stoploss, current_profit), 0.001), current_stoploss)
 
         # if we might be on a rebound, move the stoploss to the low point or keep it where it was
         if (current_profit > min_profit) or roc > 0 or rmi_slow >= params['rmi-trend']:
@@ -398,7 +399,7 @@ class Solipsis3(IStrategy):
                 return stoploss_from_open(min_profit, current_profit)
             return 1
 
-        return max(stoploss_from_open(decay_stoploss, current_profit), 0.001)
+        return min(max(stoploss_from_open(decay_stoploss, current_profit), 0.001), current_stoploss)
 
     """
     Freqtrade ROI Overload for dynamic ROI functionality
