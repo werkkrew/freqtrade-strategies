@@ -536,7 +536,7 @@ class Solipsis3(IStrategy):
                     if 'sell_params' in custom_params:
                         sell_params = custom_params['sell_params']
                     if 'minimal_roi' in custom_params:
-                        custom_stop = custom_params['minimal_roi']
+                        minimal_roi = custom_params['minimal_roi']
                     if 'custom_stop' in custom_params:
                         custom_stop = custom_params['custom_stop']
                     if 'dynamic_roi' in custom_params:
