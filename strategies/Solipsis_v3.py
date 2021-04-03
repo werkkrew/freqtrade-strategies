@@ -24,85 +24,16 @@ sys.path.append(str(Path(__file__).parent))
 import custom_indicators as cta
 
 """
-Solipsis - By @werkkrew and @JimmyNixx
-This strategy is an evolution of our previous framework "Schism" which can be found in this repository.  While Schism has been superceded by this
-strategy there may still be valuable examples and ideas in it. 
+Solipsis - By @werkkrew
+
+Credits - 
+@JimmyNixx for many of the ideas used throughout as well as helping me stay motivated throughout development! 
+@JoeSchr for documenting and doing the legwork of getting indicators to be available in the custom_stoploss
 
 We ask for nothing in return except that if you make changes which bring you greater success than what has been provided, you share those ideas back to us
 and the rest of the community. Also, please don't nag us with a million questions and especially don't blame us if you lose a ton of money using this.
 
 We take no responsibility for any success or failure you have using this strategy.
-
-Apes together strong.
-This is not financial advice.
-We like the stock.
-Where lambo?
-
-*************
-This is a very advanced strategy.  It requires a lot of configuration, optimization, and understanding of how it works and what it does before use.
-It **will not** work at all for you "out of the box".  If you download it and run an immediate backtest the odds are the results will be awful.
-
-Please review the code, understand it, and attempt to do as much due diligence as you can before asking questions about it.
-*************
-
-FEATURES:
-    - Dynamic ROI
-        - Several options, initial idea was to ride trends past ROI in a similar way to trailing stoploss but using indicators.
-        - Fallback choices includes table, roc, atr, and others.  Has the ability to set ROI table values dynamically based on indicator math.
-    - Custom Stoploss
-        - Generally a vanilla implementation of Freqtrade custom stoploss but tries to do some clever things.  Uses indicator data. (Thanks @JoeSchr!)
-    - Dynamic informative indicators based on certain stake currences and whitelist contents.
-        - If BTC/STAKE is not in whitelist, make sure to use that for an informative.
-        - If your stake is BTC or ETH, use COIN/FIAT and BTC/FIAT as informatives.
-    - Ability to provide custom parameters on a per-pair or group of pairs basis, this includes buy/sell/minimal_roi/dynamic_roi/custom_stop settings, if one desired.
-    - Custom indicator file to keep primary strategy clean(ish).
-        - Most (but not all) of what is in there is taken from freqtrade/technical with some slight modification, removes dependenacy on that import and allows
-          for some customization without having to edit those files directly.
-    - Child strategy for stake specific settings and different settings for different instances, hoping to keep this strategy file relatively
-      clutter-free from the extensive options especially when using per-pair settings.
-
-STRATEGY NOTES:
-    - If trading on a stablecoin or fiat stake (such as USD, EUR, USDT, etc.) is *highly recommended* that you remove BTC/STAKE
-      from your whitelist as this strategy performs much better on alts when using BTC as an informative but does not buy any BTC
-      itself.
-    - It is recommended to configure protections *if/as* you will use them in live and run *some* hyperopt/backtest with
-      "--enable-protections" as this strategy will hit a lot of stoplosses so the stoploss protection is helpful
-      to test. *However* - this option makes hyperopt very slow, so run your initial backtest/hyperopts without this
-      option. Once you settle on a baseline set of options, do some final optimizations with protections on.
-    - It is *not* recommended to use freqtrades built-in trailing stop, nor to hyperopt for that.
-    - It is *highly* recommended to hyperopt this with '--spaces buy' only and at least 1000 total epochs several times. There are
-      a lot of variables being hyperopted and it may take a lot of epochs to find the right settings.
-    - It is possible to hyperopt the custom stoploss and dynamic ROI settings, however a change to the freqtrade code is needed.  I have done
-      this in a fork on github and I use it personally, but this code will likely never get merged upstream so use with extreme caution.
-      (https://github.com/werkkrew/freqtrade/tree/hyperopt)
-    - Hyperopt Notes:
-        - Hyperopting buy/custom-stoploss/dynamic-roi together takes a LOT of repeat 1000 epoch runs to get optimal results.  There
-          are a ton of variables moving around and often times the reported best epoch is not desirable.
-        - Avoid hyperopt results with small avg. profit and avg. duration of < 60m (in my opinion.)
-        - I find the best results come from SharpeHyperOptLoss
-        - I personally re-run it until I find epochs with at least 0.5% avg profit and a 10:1 w/l ratio as my personal preference.
-    - It is *recommended* to leave this file untouched and do your configuration / optimizations from the child strategy Solipsis.py.
-        
-    - Example of unique buy/sell params per pair/group of pairs:
-
-    custom_pair_params = [
-        {
-            'pairs': ('ABC/XYZ', 'DEF/XYZ'),
-            'buy_params': {},
-            'sell_params': {},
-            'minimal_roi': {}
-        }
-    ]
-
-TODO: 
-    - Continue to hunt for a better all around buy signal.
-    - Tweak ROI Trend Ride
-        - Adjust pullback to be more dynamic, seems to get out a tad bit early in many cases.
-        - Consider a way to identify very large/fast spikes when RMI has not yet reacted to stay in past ROI point.
-    - Further enchance and optimize custom stop loss
-        - Continue to evaluate good circumstances to bail and sell vs hold on for recovery
-        - Curent implementation seems to work pretty well but feel like there is room for improvement.
-    - Develop a PR to fully support hyperopting the custom_stoploss and dynamic_roi spaces?
 """
 
 class Solipsis3(IStrategy):
