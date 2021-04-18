@@ -82,6 +82,10 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v4
 
+April 18, 2021:
+- **Indicator / Signal Changes**
+  - Changed all instances of T3 indicator to KAMA. T3 seemed to perform slightly better but requires such a huge amount of history that it causes errors in dry-run/live.
+
 April 16, 2021:
 - **General Changes**
   - Updated README quite a bit to hopefully (probably not) cut down on questions.

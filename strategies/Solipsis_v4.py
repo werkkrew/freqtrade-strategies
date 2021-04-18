@@ -151,8 +151,7 @@ class Solipsis4(IStrategy):
 
         ## Base Timeframe / Pair
 
-        # T3: https://www.tradingview.com/script/qzoC9H1I-T3-Average/
-        dataframe['T3'] = cta.T3(dataframe, length=233)
+        dataframe['kama'] = ta.KAMA(dataframe, length=233)
     
         # RMI: https://www.tradingview.com/script/kwIt9OgQ-Relative-Momentum-Index/
         dataframe['rmi'] = cta.RMI(dataframe, length=24, mom=5)
@@ -230,7 +229,7 @@ class Solipsis4(IStrategy):
                 btc_stake_tf = self.dp.get_pair_dataframe(pair=btc_stake, timeframe=self.timeframe)
                 dataframe['BTC_rmi'] = cta.RMI(btc_stake_tf, length=55, mom=5)
                 dataframe['BTC_close'] = btc_stake_tf['close']
-                dataframe['BTC_T3'] = cta.T3(btc_stake_tf, length=144)
+                dataframe['BTC_kama'] = ta.KAMA(btc_stake_tf, length=144)
 
         # Slam some indicators into the trade_info dict so we can dynamic roi and custom stoploss in backtest
         if self.dp.runmode.value in ('backtest', 'hyperopt'):
@@ -282,15 +281,15 @@ class Solipsis4(IStrategy):
                     conditions.append(
                         (
                             (dataframe['BTC_rmi'] > self.xbtc_base_rmi.value) &
-                            (dataframe['BTC_close'] > dataframe['BTC_T3'])
+                            (dataframe['BTC_close'] > dataframe['BTC_kama'])
                         )
                     )
                 if self.xbtc_guard.value == 'lazy':
                     conditions.append(
-                        (dataframe['close'] > dataframe['T3']) |
+                        (dataframe['close'] > dataframe['kama']) |
                         (
                             (dataframe['BTC_rmi'] > self.xbtc_base_rmi.value) &
-                            (dataframe['BTC_close'] > dataframe['BTC_T3'])
+                            (dataframe['BTC_close'] > dataframe['BTC_kama'])
                         )
                     )
 
