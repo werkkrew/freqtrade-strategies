@@ -3,12 +3,12 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
-from Solipsis_v4 import Solipsis4 as Solipsis
+from Solipsis_v5 import Solipsis5 as Solipsis
 
 """
 *** THIS IS YOUR LIVE TRADING COPY ***
 *** THIS IS A CHILD STRATEGY, REQUIRES IMPORT OF PARENT STRATEGY **
-*** CURRENTLY MAPS TO PARENT STRATEGY: Solipsis_v4 ***
+*** CURRENTLY MAPS TO PARENT STRATEGY: Solipsis_v5 ***
 
 LAST OPTIMIZED:
 
@@ -34,14 +34,25 @@ class Solipsis_USD(Solipsis):
     inf_timeframe = '1h'
 
     minimal_roi = {
-        "0": 0.01,
-        "1440": 0
+        "0": 100
     }
 
-    use_dynamic_roi = True
-    use_custom_stoploss = True
+    buy_params = {}
+
+    sell_params = {}
 
     stoploss = -0.10
+
+    use_sell_signal = True
+    sell_profit_only = False
+    ignore_roi_if_buy_signal = False
+
+    startup_candle_count: int = 233
+    process_only_new_candles = False
+
+    custom_trade_info = {}
+    custom_fiat = "USD"
+    custom_btc_inf = False
 
 """
 Optimization / Backtest Results for Current Live Instance Settings
@@ -56,14 +67,25 @@ class Solipsis_BTC(Solipsis):
     inf_timeframe = '1h'
 
     minimal_roi = {
-        "0": 0.01,
-        "1440": 0
+        "0": 100
     }
 
-    use_dynamic_roi = True
-    use_custom_stoploss = True
+    buy_params = {}
+
+    sell_params = {}
 
     stoploss = -0.10
+
+    use_sell_signal = True
+    sell_profit_only = False
+    ignore_roi_if_buy_signal = False
+
+    startup_candle_count: int = 233
+    process_only_new_candles = False
+
+    custom_trade_info = {}
+    custom_fiat = "USD"
+    custom_btc_inf = False
    
 """
 Optimization / Backtest Results for Current Live Instance Settings
@@ -78,11 +100,22 @@ class Solipsis_ETH(Solipsis):
     inf_timeframe = '1h'
 
     minimal_roi = {
-        "0": 0.01,
-        "1440": 0
+        "0": 100
     }
 
-    use_dynamic_roi = True
-    use_custom_stoploss = True
+    buy_params = {}
+
+    sell_params = {}
 
     stoploss = -0.10
+
+    use_sell_signal = True
+    sell_profit_only = False
+    ignore_roi_if_buy_signal = False
+
+    startup_candle_count: int = 233
+    process_only_new_candles = False
+
+    custom_trade_info = {}
+    custom_fiat = "USD"
+    custom_btc_inf = False

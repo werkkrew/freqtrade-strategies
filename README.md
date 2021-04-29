@@ -17,23 +17,22 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 ### TODO
 
 - Continue to improve buy signal. Ideas are welcome!
-- Continue to optimize and innovate around dynamic ROI idea.
-- Further enchance and optimize custom stop loss
+- Continue to optimize and innovate around dynamic ROI idea (now custom_sell!)
+- Further enchance and optimize custom stop loss (now part of custom_sell!)
   - Continue to evaluate good circumstances to bail and sell vs hold on for recovery
   - Curent implementation seems to work pretty well but feel like there is room for improvement.
 - Consider some factors for how "strong" the buy signal is and consider a way to evaluate informative pairs/timeframes for how careful we should be when entering. For example, if BTC oracle says to be cautious, require a stronger buy signal for entry?
 
 ### Features
 
-- **Dynamic ROI**
-  - Essentially the idea is to override the static ROI table when there is a trend to allow for larger profits.
-- **Custom Stoploss**
-  - Generally a vanilla implementation of Freqtrade custom stoploss but tries to do some clever things.  Uses indicator data. (Thanks @JoeSchr!)
+- **Custom Sell** *(previously Dynamic ROI)*
+  - In profit the idea is to override the static ROI table when there is a trend to allow for larger profits.
+  - In loss the idea is to behave like a "dynamic bailout" that preempts the stoploss when certain criteria are met.
 - **Dynamic informative indicators** based on certain stake currences and whitelist contents.
   - If BTC/STAKE is not in whitelist, make sure to use that for an informative. (This is important for strategy performance)
   - If your stake is BTC or ETH, use COIN/FIAT and BTC/FIAT as informatives.
-- Custom indicator file to keep primary strategy clean(ish).
-- Child strategy for stake specific settings and different settings for different instances, hoping to keep this strategy file relatively clutter-free from the extensive options available. I personally use the child strategy to also document the current optimization results the strategy is running off of so I can reference them easily in subsequent optimization runs.
+- **Custom indicator file** to keep primary strategy clean(ish).
+- **Child strategy** for stake specific settings and different settings for different instances, hoping to keep this strategy file relatively clutter-free from the extensive options available. I personally use the child strategy to also document the current optimization results the strategy is running off of so I can reference them easily in subsequent optimization runs.
 
 ## Overview and Theory
 
@@ -44,41 +43,71 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
     - Based on my testing when removing BTC/STAKE from the whitelist and using it as an informative provides a significant positive impact on strategy performance. *This feature can be disabled simply by having BTC/STAKE in your whitelist.*
   - When stake is BTC or ETH, lets say we have XLM/BTC in our whitelist and our chosen stablecoin/fiat is USD. In this case XLM/USD and BTC/USD will be used as informative pairs for the XLM/BTC trade. Idea is if XLM/USD is strong, or BTC/USD is weak, then XLM/BTC is likely to go up. Conversely, if BTC/USD is very strong and XLM/USD is weak or neutral, then XLM/BTC is likely to go down. 
 
-- **Dynamic ROI**
-  - To enable dynamic_roi for use you must set `use_dynamic_roi` to `True`
-  - Fundamentally, the idea is to override the base ROI table when an upward trend is present. This has been enhanced/extended in several ways.
-  - A sell will not happen when a strong enough upward trend is present, but a sell can happen when either the trend disappears or profit has retreated too far from the peak observed point and we are above the current `minimal_roi` table point.
-
-- **Custom Stoploss**
-  - To enable the custom_stoploss for use you must set `use_custom_stoploss` to `True`
-  - The stoploss is static as defined usually but a sell will happen if certain conditions are met. This is able to be hyperopted. 
-    - If profit is below our defined threshold, and some conditions are met, sell.
-    - This is essentially just a sell trigger that uses an amount of profit (loss) as the primary guard.
+- **Custom Sell** *(combined previous Dynamic ROI and Custom Stoploss)*
+  - Logic is enclosed in the `custom_sell` method but the goal is to behave like a dynamic ROI table in line with my previous `dynamic_roi` implementation.
+  - **In Profit** (formerly Dynamic ROI):
+    - Fundamentally, we do not use the standard `minimal_roi` table at all (by setting "0": 100) and instead use the `custom_sell` method combined with defined ROI values and trends to identify when to sell.
+    - You can define how the base ROI value works by setting the type to either `static`, `decay` or `step`. This is the effective "minimum_roi" value at any given time which will still be overridden in a trend, producing the "dynamic" nature of the signal.
+      - `static` will use the `csell_roi_start` value as the minimum_roi value and never change
+      - `decay` will decay in a linear manner between `csell_roi_start` to `csell_roi_end` over `csell_roi_time`.
+      - `step` will start at `csell_roi_start` and then become `csell_roi_end` after `csell_roi_time`
+    - You can disable the custom_sell by setting `use_custom_sell` to `False` and putting a standard `minimal_roi` table in the config.
+    - Again, this will function similar to the previous dynamic_roi, meaning:
+      - The `csell_roi_type` is effectively setting the `minimum_roi` just like the table, if there is a trend, we will not sell. If there is not a trend, we will fall back to this value to decide if we sell or not.
+      - Similarly, if we are in a trend, but the price pulls back from the max too much (as defined by our variables), we will also sell.
+      - Outside of a trend, the static, decaying, or stepped `minimal_roi` value is how a sell is determined.
+    - `custom_sell` will produce the following sell reasons to backtesting and telegram (a sell happened because...):
+      - `trend_roi` - There was a trend we were in and it has ended, ROI point was met and we sold (no pullback)
+      - `notrend_roi` - There was no trend and our desired ROI point was met
+      - `intrend_pullback_roi` - We are in a trend but the profit pulled back too far from the peak, min_roi was still met
+      - `intrend_pullback_noroi` - We are in a trend but the profit pulled back too far from the peak, min_roi was NOT met
+  - **In Loss** (formerly Custom Stoploss):
+    - The stoploss is static as defined usually but a sell will happen in a loss, prior to the stoploss, if certain conditions are met. This is able to be hyperopted. 
+      - If **profit is below our defined threshold**, and some conditions are met, sell at a loss, for example:
+        - Depending on the `bail_how` setting, we will sell out of what is considered a bad trade based on either the `sroc` value, or a `timeout` value. In the case of the timeout it is also possible to override the timeout in the case of a positive trend. The idea there is that if the time has passed, but the trade is on its way back up, don't bail out unless the trend disappears.
 
 ## Notes and Recommendations
 
-- For whatever reason, hyperopt will not run from the child strategy, so point at SolipsisX (where X is the current version) directly in your hyperopt command.
+- If using a standard looking `minimal_roi` dict, instead of the one I have provided, sells **can** and **will** happen as per standard freqtrade ROI functionality and the `custom_sell` will very likely not do anything. This is fine if this is your desired functionality, just be aware of it. Using a standard `minimal_roi` table is **not** recommended.
 - If trading on a stablecoin or fiat stake (such as USD, EUR, USDT, etc.) it is *highly recommended* that you remove BTC/STAKE from your whitelist as this strategy performs much better on alts when using BTC as an informative but does not buy any BTC itself.
 - It is recommended to configure protections *if/as* you will use them in live and run *some* hyperopt/backtest with "--enable-protections" as this strategy will hit a lot of stoplosses (as we use it like a sell) so the stoploss protection is helpful to test. *However* - this option makes hyperopt very slow, so run your initial backtest/hyperopts without this option. Once you settle on a baseline set of options, do some final optimizations with protections on.
-- It is *not* recommended to use freqtrades built-in trailing stop, nor to hyperopt for that.
+- It is *probably not* recommended to use freqtrades built-in trailing stop, nor to hyperopt for that, although feel free to experiment.
 - It is *highly* recommended to hyperopt this with '--spaces buy sell' only and at least 1000 total epochs several times. There are a lot of variables being hyperopted and it may take a lot of epochs to find the right settings.
-- It is possible to hyperopt the custom stoploss and dynamic ROI settings, this is done by including the 'sell' space in your hyperopt.
 - Hyperopt Notes:
-  - `custom_stoploss` and `dynamic_roi` are hyperopted as part of the `sell` space.
-  - You need to set either (or both) `use_custom_stoploss` / `use_dynamic_roi` to `True` to make the sell space hyperopt these spaces, as well keep them enabled to have those settings impact a backtest or running strategy. You can hyperopt one space at a time by using different combinations of true/false here.
-  - Just food for thought, hyperopting buy/custom-stoploss/dynamic-roi together takes a LOT of repeat 1000 epoch runs to get optimal results. There are a ton of variables moving around and often times the **reported best epoch is not always desirable**, so make sure to look through the results and not just assume the "best" one is actually the best.
+  - Just food for thought, hyperopting buy and custom-sell together takes a LOT of repeat 1000 epoch runs to get optimal results. There are a ton of variables moving around and often times the **reported best epoch is not always desirable**, so make sure to look through the results and not just assume the "best" one is actually the best.
   - Avoid hyperopt results with very small avg. profit and avg. duration of < 60m (in my opinion.) - This is best done by setting --min-trades to something as to prevent the loss function from going toward very small numbers of trades that inflate the loss function result.
   - The hyperopt loss function you use will have a massive impact on how aggressive the strategy is. I find `Sharpe` to lean towards pretty aggresive buys and `SortinoDaily` to produce the most conservative results. 
   - I personally re-run it until I find epochs with at least 0.5% avg profit and a 10:1 w/l ratio as my personal preference.
-- It is *recommended* to leave the base strategy file untouched and do your configuration from the child strategy Solipsis.py.
+- It is *recommended* to leave the base strategy file untouched and do your configuration/paste hyperopt params into the child strategy Solipsis.py.
 - You can adjust how aggressive/conservative the buy is by changing/restricting the hyperopt ranges, for example:
   - Setting the minimum `base_ma_streak` value > 1 dramatically reduces the # of trades
   - Changing optimize to False on the `base_trigger` and `xbtc_guard` and using default of `pcc` and `strict` respectively
-- You might consider playing with some of the indicator periods defined, especially the `T3`, `mastreak`, and `pcc` as they have a rather dramatic impact.
+- You might consider playing with some of the indicator periods defined, especially the `kama`, `mastreak`, and `pcc` as they have a rather dramatic impact.
 
 ## Changelog
 
 **Note:** Comprehensive changelog has only been kept since v3, April 03, 2021 release.  Prior change details are summary only.
+
+### v5
+
+April 29, 2021 (version 5.0):
+- **General Changes**
+  - **ATTENTION** The strategy will *appear* to work fine even if you are not on the latest develop branch which includes the `custom_sell` functionality. Unless you see custom sell reasons in the sell table after backtesting, you need to make sure you pull the latest develop code to your installation or pull the latest :develop container!
+  - I know v4 wasn't out for very long before this jump but the new `custom_sell` method in current freqtrade develop created an opportunity to change/improve a lot of things.
+  - Updated the child strategy such that you can call hyperopt from it now without errors.
+  - Removed the "default" `buy_params` and `sell_params` to force users to hyperopt prior to testing. This strategy **requires** hyperopting and there is no one-size-fits-all set of parameters. I wanted to discourage people from downloading this, backtesting with my base set of params and complaining.
+    - I also hope this might encourage folks to keep their specific optimized settings in the child-strategy and use that.
+  - Changed out `dynamic_roi` and `custom_stoploss` to use the new `custom_sell` feature in the latest freqtrade develop branch, functionally it should be very similar but is more compliant / supported by freqtrade as I am no longer overloading the roi methods. This should be a much better path forward.
+    - Consequently, this means you **must** be on the latest freqtrade develop branch on your local installation or container.
+  - Added a version tag in the header of the strategy for sub-releases, (e.g. 4.1, 4.2, etc.), major versions will still be held in the file name. This will help me/us know what version you are using as it evolves.
+  - Dataframe is now natively accessible in `custom_sell` and `custom_stoploss` so the code used to force that behavior has been removed.
+  - The SROC comparission is now done using the percentage value as the indicator uses, rather than dividing by 100.
+- **Dynamic ROI**
+  - Dynamic ROI as it was, has been removed in favor of the new `custom_sell` method. 
+    - See the **custom_sell** area in the "Overview and Theory" section for additional details.
+- **Custom Stoploss**
+  - Custom Stoploss as it was, has been removed in favor of the new `custom_sell` method.
+    - See the **custom_sell** area in the "Overview and Theory" section for addtional details.
 
 ### v4
 
@@ -166,7 +195,5 @@ Initial Release:
 - Removed majority of 'populate_trades'
 - Moved extranneous code and indicators out to custom_indicators helper file
 - Added / Removed several indicators looking for a better buy signal, ultimately ended up keeping the primary Schism buy as it was.
-
-
 
 ![Where Lambo?](misc/wherelambo.jpg)

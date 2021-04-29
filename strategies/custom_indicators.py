@@ -26,6 +26,15 @@ def linear_growth(start: float, end: float, start_time: int, end_time: int, trad
 
     return min(end, start + (rate * time))
 
+def linear_decay(start: float, end: float, start_time: int, end_time: int, trade_time: int) -> float:
+    """
+    Simple linear decay function. Decays from start to end after end_time minutes (starts after start_time minutes)
+    """
+    time = max(0, trade_time - start_time)
+    rate = (start - end) / (end_time - start_time)
+
+    return max(end, start - (rate * time))
+
 """
 TA Indicators
 """
