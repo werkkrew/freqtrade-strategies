@@ -301,7 +301,10 @@ class Solipsis5(IStrategy):
                     **kwargs) -> Optional[Union[str, bool]]:
 
         trade_open_date = timeframe_to_prev_date(self.timeframe, trade.open_date_utc)
-        trade_row = dataframe.loc[dataframe['date'] == trade_open_date].squeeze()
+        trade_row = dataframe.loc[dataframe['date'] == trade_open_date]
+        if trade_row is None:
+            return
+        trade_row = trade_row.squeeze()
 
         trade_dur = int((current_time.timestamp() - trade.open_date_utc.timestamp()) // 60)
         max_profit = max(0, trade.calc_profit_ratio(trade.max_rate))
