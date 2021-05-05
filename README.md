@@ -90,10 +90,12 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v5
 
-May 5, 2021 (version 5.1)"
+May 5, 2021 (version 5.1):
 - **Bugfixes**
   - Fixed bug causing hyperopt output to not align correctly with a backtest using the outputted parameters.
   - Removed the buy/sell timeout things as some people reported issues with them and they arent critical.
+- **Note**
+  - I am not 100% convinced the new `custom_sell` is working as intended. Use with caution and keep checking for updates to both freqtrade and this strategy as I try to work through some things I am finding as odd, as well as general improvements and optimizations.
 
 April 29, 2021 (version 5.0):
 - **General Changes**
