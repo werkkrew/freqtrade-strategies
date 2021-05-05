@@ -90,6 +90,11 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v5
 
+May 5, 2021 (version 5.1)"
+- **Bugfixes**
+  - Fixed bug causing hyperopt output to not align correctly with a backtest using the outputted parameters.
+  - Removed the buy/sell timeout things as some people reported issues with them and they arent critical.
+
 April 29, 2021 (version 5.0):
 - **General Changes**
   - **ATTENTION** The strategy will *appear* to work fine even if you are not on the latest develop branch which includes the `custom_sell` functionality. Unless you see custom sell reasons in the sell table after backtesting, you need to make sure you pull the latest develop code to your installation or pull the latest :develop container!
