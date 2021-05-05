@@ -34,7 +34,7 @@ the community. Also, please don't nag me with a million questions and especially
 
 I take no responsibility for any success or failure you have using this strategy.
 
-VERSION: 5.0
+VERSION: 5.1
 """
 
 class Solipsis5(IStrategy):
@@ -59,14 +59,14 @@ class Solipsis5(IStrategy):
     ## Sell Space Params are being used for both custom_stoploss and custom_sell
 
     # Custom Sell Profit (formerly Dynamic ROI)
-    csell_roi_type = CategoricalParameter(['static', 'decay', 'step'], default='static', space='sell', optimize=True)
+    csell_roi_type = CategoricalParameter(['static', 'decay', 'step'], default='decay', space='sell', optimize=True)
     csell_roi_time = IntParameter(720, 1440, default=720, space='sell')
     csell_roi_start = DecimalParameter(0.01, 0.05, default=0.01, space='sell')
     csell_roi_end = DecimalParameter(0.0, 0.01, default=0, space='sell')
     csell_trend_type = CategoricalParameter(['rmi', 'ssl', 'candle', 'any'], default='any', space='sell', optimize=True)
     csell_pullback = CategoricalParameter([True, False], default=True, space='sell', optimize=True)
-    csell_pullback_amount = DecimalParameter(0.005, 0.02, default=0.005, space='sell')
-    csell_pullback_respect_roi = CategoricalParameter([True, False], default=True, space='sell', optimize=True)
+    csell_pullback_amount = DecimalParameter(0.005, 0.03, default=0.01, space='sell')
+    csell_pullback_respect_roi = CategoricalParameter([True, False], default=False, space='sell', optimize=True)
 
     # Custom Sell Loss (formerly Custom Stoploss)
     csell_loss_threshold = DecimalParameter(-0.05, 0, default=-0.03, space='sell')
@@ -370,22 +370,3 @@ class Solipsis5(IStrategy):
                         return 'loss_timeout'
         else:
             return None
-
-    """
-    Trade Timeout Overloads
-    """
-    def check_buy_timeout(self, pair: str, trade: Trade, order: dict, **kwargs) -> bool:
-        bid_strategy = self.config.get('bid_strategy', {})
-        ob = self.dp.orderbook(pair, 1)
-        current_price = ob[f"{bid_strategy['price_side']}s"][0][0]
-        if current_price > order['price'] * 1.01:
-            return True
-        return False
-
-    def check_sell_timeout(self, pair: str, trade: Trade, order: dict, **kwargs) -> bool:
-        ask_strategy = self.config.get('ask_strategy', {})
-        ob = self.dp.orderbook(pair, 1)
-        current_price = ob[f"{ask_strategy['price_side']}s"][0][0]
-        if current_price < order['price'] * 0.99:
-            return True
-        return False
