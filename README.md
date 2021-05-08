@@ -90,6 +90,10 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v5
 
+May 7, 2021 (version 5.1.1):
+- **General**
+  - Changed default for `base_trigger` from `optimize=False` to `optimize=True`
+
 May 5, 2021 (version 5.1):
 - **Bugfixes**
   - Fixed bug causing hyperopt output to not align correctly with a backtest using the outputted parameters.

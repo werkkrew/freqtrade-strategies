@@ -34,7 +34,7 @@ the community. Also, please don't nag me with a million questions and especially
 
 I take no responsibility for any success or failure you have using this strategy.
 
-VERSION: 5.1
+VERSION: 5.1.1
 """
 
 class Solipsis5(IStrategy):
@@ -47,7 +47,7 @@ class Solipsis5(IStrategy):
     base_rmi_min = IntParameter(0, 30, default=20, space='buy')
     base_ma_streak = IntParameter(1, 4, default=1, space='buy')
     base_rmi_streak = IntParameter(3, 8, default=3, space='buy')
-    base_trigger = CategoricalParameter(['pcc', 'rmi', 'none'], default='rmi', space='buy', optimize=False)
+    base_trigger = CategoricalParameter(['pcc', 'rmi', 'none'], default='rmi', space='buy', optimize=True)
     inf_pct_adr = DecimalParameter(0.70, 0.99, default=0.80, space='buy')
     # BTC Informative
     xbtc_guard = CategoricalParameter(['strict', 'lazy', 'none'], default='lazy', space='buy', optimize=True)
@@ -299,7 +299,7 @@ class Solipsis5(IStrategy):
     def custom_sell(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
                     current_profit: float, dataframe: DataFrame,
                     **kwargs) -> Optional[Union[str, bool]]:
-
+                    
         trade_open_date = timeframe_to_prev_date(self.timeframe, trade.open_date_utc)
         trade_row = dataframe.loc[dataframe['date'] == trade_open_date]
         if trade_row is None:
