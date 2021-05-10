@@ -90,6 +90,13 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v5
 
+May 9, 2021 (version 5.1.2):
+- **General**
+  - Fixed a bug in how custom_sell was using the dataframe, the current state of how to do this upstream in freqtrade is in flux, I went back to the Solipsis v4 way of getting the dataframe in custom_sell until the devs decide on a consistent method going forward.
+  - **Note:** As per the previous note, `custom_sell` behavior feels a bit sus to me at the moment, I would use v5 with extreme caution.
+- **Indicators/ROI**
+  - Changed `candle` trend type to look for green candles (close>open) rather than close > previous close
+
 May 7, 2021 (version 5.1.1):
 - **General**
   - Changed default for `base_trigger` from `optimize=False` to `optimize=True`
