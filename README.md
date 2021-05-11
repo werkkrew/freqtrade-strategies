@@ -90,6 +90,10 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v5
 
+May 11, 2021 (version 5.1.3):
+- **General**
+  - Updated `custom_sell` dataframe access to use new method.
+
 May 9, 2021 (version 5.1.2):
 - **General**
   - Fixed a bug in how custom_sell was using the dataframe, the current state of how to do this upstream in freqtrade is in flux, I went back to the Solipsis v4 way of getting the dataframe in custom_sell until the devs decide on a consistent method going forward.
