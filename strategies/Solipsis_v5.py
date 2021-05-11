@@ -3,7 +3,7 @@ import talib.abstract as ta
 import freqtrade.vendor.qtpylib.indicators as qtpylib
 import arrow
 
-from freqtrade.strategy import (IStrategy, timeframe_to_prev_date, merge_informative_pair, stoploss_from_open, 
+from freqtrade.strategy import (IStrategy, merge_informative_pair, stoploss_from_open, 
                                 IntParameter, DecimalParameter, CategoricalParameter)
 
 from typing import Dict, List, Optional, Tuple, Union
@@ -34,7 +34,7 @@ the community. Also, please don't nag me with a million questions and especially
 
 I take no responsibility for any success or failure you have using this strategy.
 
-VERSION: 5.1.2
+VERSION: 5.1.3
 """
 
 class Solipsis5(IStrategy):
@@ -59,7 +59,7 @@ class Solipsis5(IStrategy):
     ## Sell Space Params are being used for both custom_stoploss and custom_sell
 
     # Custom Sell Profit (formerly Dynamic ROI)
-    csell_roi_type = CategoricalParameter(['static', 'decay', 'step'], default='decay', space='sell', optimize=True)
+    csell_roi_type = CategoricalParameter(['static', 'decay', 'step'], default='step', space='sell', optimize=True)
     csell_roi_time = IntParameter(720, 1440, default=720, space='sell')
     csell_roi_start = DecimalParameter(0.01, 0.05, default=0.01, space='sell')
     csell_roi_end = DecimalParameter(0.0, 0.01, default=0, space='sell')
@@ -70,7 +70,7 @@ class Solipsis5(IStrategy):
 
     # Custom Sell Loss (formerly Custom Stoploss)
     csell_loss_threshold = DecimalParameter(-0.05, 0, default=-0.03, space='sell')
-    csell_bail_how = CategoricalParameter(['roc', 'time', 'any', 'none'], default='roc', space='sell', optimize=True)
+    csell_bail_how = CategoricalParameter(['roc', 'time', 'any', 'none'], default='none', space='sell', optimize=True)
     csell_bail_roc = DecimalParameter(-5.0, -1.0, default=-3.0, space='sell')
     csell_bail_time = IntParameter(720, 1440, default=720, space='sell')
     csell_bail_time_trend = CategoricalParameter([True, False], default=True, space='sell', optimize=True)
@@ -133,7 +133,8 @@ class Solipsis5(IStrategy):
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         if not metadata['pair'] in self.custom_trade_info:
             self.custom_trade_info[metadata['pair']] = {}
-            self.custom_trade_info[metadata['pair']]['had-trend'] = False
+            if not 'had-trend' in self.custom_trade_info[metadata["pair"]]:
+                self.custom_trade_info[metadata['pair']]['had-trend'] = False
 
         ## Base Timeframe / Pair
 
@@ -218,13 +219,6 @@ class Solipsis5(IStrategy):
                 dataframe['BTC_close'] = btc_stake_tf['close']
                 dataframe['BTC_kama'] = ta.KAMA(btc_stake_tf, length=144)
 
-        # Slam some indicators into the trade_info dict so we can dynamic roi and custom stoploss in backtest
-        if self.dp.runmode.value in ('backtest', 'hyperopt'):
-            self.custom_trade_info[metadata['pair']]['sroc'] = dataframe[['date', 'sroc']].copy().set_index('date')
-            self.custom_trade_info[metadata['pair']]['ssl-dir'] = dataframe[['date', 'ssl-dir']].copy().set_index('date')
-            self.custom_trade_info[metadata['pair']]['rmi-up-trend'] = dataframe[['date', 'rmi-up-trend']].copy().set_index('date')
-            self.custom_trade_info[metadata['pair']]['candle-up-trend'] = dataframe[['date', 'candle-up-trend']].copy().set_index('date')
-
         return dataframe
 
     """
@@ -303,20 +297,11 @@ class Solipsis5(IStrategy):
     Current implementation is meant to behave similar to my original "dynamic_roi" concept when in profit
     or like the original "custom_stoploss" when at a loss.
     """
-    def custom_sell(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
-                    current_profit: float, **kwargs) -> Optional[Union[str, bool]]:
+    def custom_sell(self, pair: str, trade: 'Trade', current_time: 'datetime', current_rate: float,
+                    current_profit: float, **kwargs):
                     
-        if self.config['runmode'].value in ('live', 'dry_run'):
-            dataframe, last_updated = self.dp.get_analyzed_dataframe(pair=pair, timeframe=self.timeframe)
-            sroc = dataframe['sroc'].iat[-1]
-            rmi_trend = dataframe['rmi-up-trend'].iat[-1]
-            candle_trend = dataframe['candle-up-trend'].iat[-1]
-            ssl_dir = dataframe['ssl-dir'].iat[-1]
-        else:
-            sroc = self.custom_trade_info[trade.pair]['sroc'].loc[current_time]['sroc']
-            rmi_trend = self.custom_trade_info[trade.pair]['rmi-up-trend'].loc[current_time]['rmi-up-trend']
-            candle_trend = self.custom_trade_info[trade.pair]['candle-up-trend'].loc[current_time]['candle-up-trend']
-            ssl_dir = self.custom_trade_info[trade.pair]['ssl-dir'].loc[current_time]['ssl-dir']
+        dataframe, _ = self.dp.get_analyzed_dataframe(pair=pair, timeframe=self.timeframe)
+        current_candle = dataframe.iloc[-1].squeeze()
 
         trade_dur = int((current_time.timestamp() - trade.open_date_utc.timestamp()) // 60)
         max_profit = max(0, trade.calc_profit_ratio(trade.max_rate))
@@ -336,13 +321,13 @@ class Solipsis5(IStrategy):
 
         # Determine if there is a trend
         if self.csell_trend_type.value == 'rmi' or self.csell_trend_type.value == 'any':
-            if rmi_trend == 1:
+            if current_candle['rmi-up-trend'] == 1:
                 in_trend = True
         if self.csell_trend_type.value == 'ssl' or self.csell_trend_type.value == 'any':
-            if ssl_dir == 'up':
+            if current_candle['ssl-dir'] == 'up':
                 in_trend = True
         if self.csell_trend_type.value == 'candle' or self.csell_trend_type.value == 'any':
-            if candle_trend == 1:
+            if current_candle['candle-up-trend'] == 1:
                 in_trend = True
 
         # Don't sell if we are in a trend unless the pullback threshold is met
@@ -371,7 +356,7 @@ class Solipsis5(IStrategy):
         elif current_profit < self.csell_loss_threshold.value:
             if self.csell_bail_how.value == 'roc' or self.csell_bail_how.value == 'any':
                 # Dynamic bailout based on rate of change
-                if sroc <= self.csell_bail_roc.value:
+                if current_candle['sroc'] <= self.csell_bail_roc.value:
                     return 'loss_roc'
             if self.csell_bail_how.value == 'time' or self.csell_bail_how.value == 'any':
                 # Dynamic bailout based on time, unless time_trend is true and there is a potential reversal
