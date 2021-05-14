@@ -90,6 +90,12 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v5
 
+May 13, 2021 (version 5.1.4):
+- **General**
+  - It seems there is an issue with hyperopt when calling it from a child strategy. As such, it is recommended to call the strategy directly during hyperopt (e.g. --strategy Solipsis5), you can still put the found parameters into the child strategy for live/dry run if you prefer and this is still my recommended way to configure the strategy. Especially if running multiple instances.
+- **Custom Sell**
+  - As per issue: https://github.com/freqtrade/freqtrade/issues/4920 current_profit has not been behaving how I expected. As such I have implemented a (hopefully) temporary workaround to provide more reliable/realistic profit values during backtesting/hyperopting until an upstream solution is implemented.
+
 May 11, 2021 (version 5.1.3):
 - **General**
   - Updated `custom_sell` dataframe access to use new method.

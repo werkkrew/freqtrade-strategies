@@ -34,7 +34,7 @@ the community. Also, please don't nag me with a million questions and especially
 
 I take no responsibility for any success or failure you have using this strategy.
 
-VERSION: 5.1.3
+VERSION: 5.1.4
 """
 
 class Solipsis5(IStrategy):
@@ -301,7 +301,13 @@ class Solipsis5(IStrategy):
                     current_profit: float, **kwargs):
                     
         dataframe, _ = self.dp.get_analyzed_dataframe(pair=pair, timeframe=self.timeframe)
-        current_candle = dataframe.iloc[-1].squeeze()
+        last_candle = dataframe.iloc[-1].squeeze()
+
+        # Temporary workaround because current_profit as fed to this method uses candle high
+        # This might get changed in a future freqtrade release
+        # See: https://github.com/freqtrade/freqtrade/issues/4920
+        # Backtest will resolve the sale price, once triggered at the *open* of the *next* candle
+        current_profit = trade.calc_profit_ratio(last_candle['close'])
 
         trade_dur = int((current_time.timestamp() - trade.open_date_utc.timestamp()) // 60)
         max_profit = max(0, trade.calc_profit_ratio(trade.max_rate))
@@ -321,13 +327,13 @@ class Solipsis5(IStrategy):
 
         # Determine if there is a trend
         if self.csell_trend_type.value == 'rmi' or self.csell_trend_type.value == 'any':
-            if current_candle['rmi-up-trend'] == 1:
+            if last_candle['rmi-up-trend'] == 1:
                 in_trend = True
         if self.csell_trend_type.value == 'ssl' or self.csell_trend_type.value == 'any':
-            if current_candle['ssl-dir'] == 'up':
+            if last_candle['ssl-dir'] == 'up':
                 in_trend = True
         if self.csell_trend_type.value == 'candle' or self.csell_trend_type.value == 'any':
-            if current_candle['candle-up-trend'] == 1:
+            if last_candle['candle-up-trend'] == 1:
                 in_trend = True
 
         # Don't sell if we are in a trend unless the pullback threshold is met
@@ -356,7 +362,7 @@ class Solipsis5(IStrategy):
         elif current_profit < self.csell_loss_threshold.value:
             if self.csell_bail_how.value == 'roc' or self.csell_bail_how.value == 'any':
                 # Dynamic bailout based on rate of change
-                if current_candle['sroc'] <= self.csell_bail_roc.value:
+                if last_candle['sroc'] <= self.csell_bail_roc.value:
                     return 'loss_roc'
             if self.csell_bail_how.value == 'time' or self.csell_bail_how.value == 'any':
                 # Dynamic bailout based on time, unless time_trend is true and there is a potential reversal
