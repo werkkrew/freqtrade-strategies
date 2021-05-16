@@ -90,6 +90,10 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v5
 
+May 16, 2021 (version 5.2.1):
+- **Custom Sell**
+  - Fixed a bug with one of the variables.
+
 May 14, 2021 (version 5.2):
 - **General**
   - Slight modification to hyperopt params (added load=True)

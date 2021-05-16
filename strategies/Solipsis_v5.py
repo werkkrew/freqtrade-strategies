@@ -35,7 +35,7 @@ the community. Also, please don't nag me with a million questions and especially
 
 I take no responsibility for any success or failure you have using this strategy.
 
-VERSION: 5.2
+VERSION: 5.2.1
 """
 
 class Solipsis5(IStrategy):
@@ -68,6 +68,7 @@ class Solipsis5(IStrategy):
     csell_pullback = CategoricalParameter([True, False], default=True, space='sell', load=True, optimize=True)
     csell_pullback_amount = DecimalParameter(0.005, 0.03, default=0.01, space='sell', load=True, optimize=True)
     csell_pullback_respect_roi = CategoricalParameter([True, False], default=False, space='sell', load=True, optimize=True)
+    csell_endtrend_respect_roi = CategoricalParameter([True, False], default=False, space='sell', load=True, optimize=True)
 
     # Custom Stoploss
     cstop_loss_threshold = DecimalParameter(-0.05, -0.01, default=-0.03, space='sell', load=True, optimize=True)
@@ -376,7 +377,7 @@ class Solipsis5(IStrategy):
                 if current_profit > min_roi:
                     self.custom_trade_info[trade.pair]['had-trend'] = False
                     return 'trend_roi'
-                elif self.sell_endtrend_respect_roi == False:
+                elif self.csell_endtrend_respect_roi.value == False:
                     self.custom_trade_info[trade.pair]['had-trend'] = False
                     return 'trend_noroi'
             elif current_profit > min_roi: 
