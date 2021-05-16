@@ -27,14 +27,15 @@ import custom_indicators as cta
 Solipsis - By @werkkrew
 
 Credits - 
-@JimmyNixx for many of the ideas used throughout as well as helping me stay motivated throughout development! 
+@JimmyNixx for many of the ideas used throughout as well as helping me stay motivated throughout development!
+@rk for submitting many PR's that have made this strategy possible! 
 
 I ask for nothing in return except that if you make changes which bring you greater success than what has been provided, you share those ideas back to 
 the community. Also, please don't nag me with a million questions and especially don't blame me if you lose a ton of money using this.
 
 I take no responsibility for any success or failure you have using this strategy.
 
-VERSION: 5.1.4
+VERSION: 5.2
 """
 
 class Solipsis5(IStrategy):
@@ -42,38 +43,38 @@ class Solipsis5(IStrategy):
     ## Buy Space Hyperopt Variables
 
     # Base Pair Params
-    base_mp = IntParameter(10, 50, default=30, space='buy')
-    base_rmi_max = IntParameter(30, 60, default=50, space='buy')
-    base_rmi_min = IntParameter(0, 30, default=20, space='buy')
-    base_ma_streak = IntParameter(1, 4, default=1, space='buy')
-    base_rmi_streak = IntParameter(3, 8, default=3, space='buy')
-    base_trigger = CategoricalParameter(['pcc', 'rmi', 'none'], default='rmi', space='buy', optimize=True)
-    inf_pct_adr = DecimalParameter(0.70, 0.99, default=0.80, space='buy')
+    base_mp = IntParameter(10, 50, default=30, space='buy', load=True, optimize=True)
+    base_rmi_max = IntParameter(30, 60, default=50, space='buy', load=True, optimize=True)
+    base_rmi_min = IntParameter(0, 30, default=20, space='buy', load=True, optimize=True)
+    base_ma_streak = IntParameter(1, 4, default=1, space='buy', load=True, optimize=True)
+    base_rmi_streak = IntParameter(3, 8, default=3, space='buy', load=True, optimize=True)
+    base_trigger = CategoricalParameter(['pcc', 'rmi', 'none'], default='rmi', space='buy', load=True, optimize=True)
+    inf_pct_adr = DecimalParameter(0.70, 0.99, default=0.80, space='buy', load=True, optimize=True)
     # BTC Informative
     xbtc_guard = CategoricalParameter(['strict', 'lazy', 'none'], default='lazy', space='buy', optimize=True)
-    xbtc_base_rmi = IntParameter(20, 70, default=40, space='buy')
+    xbtc_base_rmi = IntParameter(20, 70, default=40, space='buy', load=True, optimize=True)
     # BTC / ETH Stake Parameters
-    xtra_base_stake_rmi = IntParameter(10, 50, default=50, space='buy')
-    xtra_base_fiat_rmi = IntParameter(30, 70, default=50, space='buy')
+    xtra_base_stake_rmi = IntParameter(10, 50, default=50, space='buy', load=True, optimize=True)
+    xtra_base_fiat_rmi = IntParameter(30, 70, default=50, space='buy', load=True, optimize=True)
 
     ## Sell Space Params are being used for both custom_stoploss and custom_sell
 
     # Custom Sell Profit (formerly Dynamic ROI)
-    csell_roi_type = CategoricalParameter(['static', 'decay', 'step'], default='step', space='sell', optimize=True)
-    csell_roi_time = IntParameter(720, 1440, default=720, space='sell')
-    csell_roi_start = DecimalParameter(0.01, 0.05, default=0.01, space='sell')
-    csell_roi_end = DecimalParameter(0.0, 0.01, default=0, space='sell')
-    csell_trend_type = CategoricalParameter(['rmi', 'ssl', 'candle', 'any'], default='any', space='sell', optimize=True)
-    csell_pullback = CategoricalParameter([True, False], default=True, space='sell', optimize=True)
-    csell_pullback_amount = DecimalParameter(0.005, 0.03, default=0.01, space='sell')
-    csell_pullback_respect_roi = CategoricalParameter([True, False], default=False, space='sell', optimize=True)
+    csell_roi_type = CategoricalParameter(['static', 'decay', 'step'], default='step', space='sell', load=True, optimize=True)
+    csell_roi_time = IntParameter(720, 1440, default=720, space='sell', load=True, optimize=True)
+    csell_roi_start = DecimalParameter(0.01, 0.05, default=0.01, space='sell', load=True, optimize=True)
+    csell_roi_end = DecimalParameter(0.0, 0.01, default=0, space='sell', load=True, optimize=True)
+    csell_trend_type = CategoricalParameter(['rmi', 'ssl', 'candle', 'any', 'none'], default='any', space='sell', load=True, optimize=True)
+    csell_pullback = CategoricalParameter([True, False], default=True, space='sell', load=True, optimize=True)
+    csell_pullback_amount = DecimalParameter(0.005, 0.03, default=0.01, space='sell', load=True, optimize=True)
+    csell_pullback_respect_roi = CategoricalParameter([True, False], default=False, space='sell', load=True, optimize=True)
 
-    # Custom Sell Loss (formerly Custom Stoploss)
-    csell_loss_threshold = DecimalParameter(-0.05, 0, default=-0.03, space='sell')
-    csell_bail_how = CategoricalParameter(['roc', 'time', 'any', 'none'], default='none', space='sell', optimize=True)
-    csell_bail_roc = DecimalParameter(-5.0, -1.0, default=-3.0, space='sell')
-    csell_bail_time = IntParameter(720, 1440, default=720, space='sell')
-    csell_bail_time_trend = CategoricalParameter([True, False], default=True, space='sell', optimize=True)
+    # Custom Stoploss
+    cstop_loss_threshold = DecimalParameter(-0.05, -0.01, default=-0.03, space='sell', load=True, optimize=True)
+    cstop_bail_how = CategoricalParameter(['roc', 'time', 'any', 'none'], default='none', space='sell', load=True, optimize=True)
+    cstop_bail_roc = DecimalParameter(-5.0, -1.0, default=-3.0, space='sell', load=True, optimize=True)
+    cstop_bail_time = IntParameter(60, 1440, default=720, space='sell', load=True, optimize=True)
+    cstop_bail_time_trend = CategoricalParameter([True, False], default=True, space='sell', load=True, optimize=True)
     
     timeframe = '5m'
     inf_timeframe = '1h'
@@ -86,12 +87,13 @@ class Solipsis5(IStrategy):
         "0": 100
     }
 
-    stoploss = -0.10
+    stoploss = -0.99
+    use_custom_stoploss = True
 
     # Recommended
     use_sell_signal = True
-    sell_profit_only = False
-    ignore_roi_if_buy_signal = False
+    sell_profit_only = True
+    ignore_roi_if_buy_signal = True
 
     # Required
     startup_candle_count: int = 233
@@ -293,21 +295,38 @@ class Solipsis5(IStrategy):
         return dataframe
 
     """
+    Custom Stoploss
+    """
+    def custom_stoploss(self, pair: str, trade: 'Trade', current_time: datetime, current_rate: float, current_profit: float, **kwargs) -> float:
+
+        dataframe, _ = self.dp.get_analyzed_dataframe(pair=pair, timeframe=self.timeframe)
+        last_candle = dataframe.iloc[-1].squeeze()
+        trade_dur = int((current_time.timestamp() - trade.open_date_utc.timestamp()) // 60)
+        in_trend = self.custom_trade_info[trade.pair]['had-trend']
+
+        # Determine how we sell when we are in a loss
+        if current_profit < self.cstop_loss_threshold.value:
+            if self.cstop_bail_how.value == 'roc' or self.cstop_bail_how.value == 'any':
+                # Dynamic bailout based on rate of change
+                if last_candle['sroc'] <= self.cstop_bail_roc.value:
+                    return 0.01
+            if self.cstop_bail_how.value == 'time' or self.cstop_bail_how.value == 'any':
+                # Dynamic bailout based on time, unless time_trend is true and there is a potential reversal
+                if trade_dur > self.cstop_bail_time.value:
+                    if self.cstop_bail_time_trend.value == True and in_trend == True:
+                        return 1
+                    else:
+                        return 0.01
+        return 1
+
+    """
     Custom Sell
-    Current implementation is meant to behave similar to my original "dynamic_roi" concept when in profit
-    or like the original "custom_stoploss" when at a loss.
     """
     def custom_sell(self, pair: str, trade: 'Trade', current_time: 'datetime', current_rate: float,
                     current_profit: float, **kwargs):
                     
         dataframe, _ = self.dp.get_analyzed_dataframe(pair=pair, timeframe=self.timeframe)
         last_candle = dataframe.iloc[-1].squeeze()
-
-        # Temporary workaround because current_profit as fed to this method uses candle high
-        # This might get changed in a future freqtrade release
-        # See: https://github.com/freqtrade/freqtrade/issues/4920
-        # Backtest will resolve the sale price, once triggered at the *open* of the *next* candle
-        current_profit = trade.calc_profit_ratio(last_candle['close'])
 
         trade_dur = int((current_time.timestamp() - trade.open_date_utc.timestamp()) // 60)
         max_profit = max(0, trade.calc_profit_ratio(trade.max_rate))
@@ -352,24 +371,15 @@ class Solipsis5(IStrategy):
             # We are in a trend and pullback is disabled or has not happened or various criteria were not met, hold
             return None
         # If we are not in a trend, just use the roi value
-        elif in_trend == False and current_profit > min_roi:
+        elif in_trend == False:
             if self.custom_trade_info[trade.pair]['had-trend']:
-                self.custom_trade_info[trade.pair]['had-trend'] = False
-                return 'trend_roi'
-            else: 
+                if current_profit > min_roi:
+                    self.custom_trade_info[trade.pair]['had-trend'] = False
+                    return 'trend_roi'
+                elif self.sell_endtrend_respect_roi == False:
+                    self.custom_trade_info[trade.pair]['had-trend'] = False
+                    return 'trend_noroi'
+            elif current_profit > min_roi: 
                 return 'notrend_roi'
-        # Determine how we sell when we are in a loss
-        elif current_profit < self.csell_loss_threshold.value:
-            if self.csell_bail_how.value == 'roc' or self.csell_bail_how.value == 'any':
-                # Dynamic bailout based on rate of change
-                if last_candle['sroc'] <= self.csell_bail_roc.value:
-                    return 'loss_roc'
-            if self.csell_bail_how.value == 'time' or self.csell_bail_how.value == 'any':
-                # Dynamic bailout based on time, unless time_trend is true and there is a potential reversal
-                if trade_dur > self.csell_bail_time.value:
-                    if self.csell_bail_time_trend.value == True and in_trend == True:
-                        return None
-                    else:
-                        return 'loss_timeout'
         else:
             return None

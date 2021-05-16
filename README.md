@@ -90,6 +90,17 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ### v5
 
+May 14, 2021 (version 5.2):
+- **General**
+  - Slight modification to hyperopt params (added load=True)
+  - Added @rk to credits because he is the best!
+- **Custom Sell**
+  - Issue: https://github.com/freqtrade/freqtrade/issues/4920 has been addressed and code has been updated without workaround, should work as designed once it is merged to develop.
+  - Moved the "bailout" and "timeout" (sells for loss) portion of the custom sell back into `custom_stoploss`
+    - Changed `sell_profit_only` to true now that the sell for loss is back in `custom_stoploss`
+  - Minor tweak to in how `custom_sell` sets `had-trend` back to false.
+  - Changed `ignore_roi_if_buy_signal` to true because it probably can't hurt?
+
 May 13, 2021 (version 5.1.4):
 - **General**
   - It seems there is an issue with hyperopt when calling it from a child strategy. As such, it is recommended to call the strategy directly during hyperopt (e.g. --strategy Solipsis5), you can still put the found parameters into the child strategy for live/dry run if you prefer and this is still my recommended way to configure the strategy. Especially if running multiple instances.
