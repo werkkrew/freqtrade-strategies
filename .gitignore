@@ -1,6 +1,7 @@
 # Freqtrade Excludes
 
 # Private configs
+config/
 config-*.json
 config-trade*.json
 config-dry*.json
