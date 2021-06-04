@@ -6,7 +6,7 @@ Use these strategies at your own risk. We are not responsible for anything.
 
 ## Repostitory Structure
 
-Current strategies are found in the root of the `strategies/` folder. The `archive/` folder contains old strategies and hyperopts.
+Current strategies are found in the root of the `strategies/` folder. The `strategies/archive/` folder contains old strategies and hyperopts.
 
 
 ![Where Lambo?](misc/wherelambo.jpg)
