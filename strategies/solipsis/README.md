@@ -2,7 +2,7 @@
 
 **Solipsis is no longer the strategy I am using and will likely no longer be maintained.**
 
-**THE DEFAULT PARAMETERS ARE INTENTIONALLY BAD, HYPEROPTING THIS STRATEGY IS CONSISTERED REQUIRED.  SEE NOTES BELOW**
+**THE DEFAULT PARAMETERS ARE INTENTIONALLY BAD, HYPEROPTING THIS STRATEGY IS CONSISTERED REQUIRED.  SEE NOTES BELOW.**
 
 ## About Solipsis
 
@@ -64,6 +64,7 @@ The primary difference between `Schism` and `Solipsis` is that Schism used activ
 
 ## Notes and Recommendations
 
+- The default parameters are bad on purpose. If you backtest this strategy without hyperopting it around the buy/sell spaces, it will look bad.
 - If using a standard looking `minimal_roi` dict, instead of the one I have provided, sells **can** and **will** happen as per standard freqtrade ROI functionality and the `custom_sell` will very likely not do anything. This is fine if this is your desired functionality, just be aware of it. Using a standard `minimal_roi` table is **not** recommended.
 - If trading on a stablecoin or fiat stake (such as USD, EUR, USDT, etc.) it is *highly recommended* that you remove BTC/STAKE from your whitelist as this strategy performs much better on alts when using BTC as an informative but does not buy any BTC itself.
 - It is recommended to configure protections *if/as* you will use them in live and run *some* hyperopt/backtest with "--enable-protections" as this strategy will hit a lot of stoplosses (as we use it like a sell) so the stoploss protection is helpful to test. *However* - this option makes hyperopt very slow, so run your initial backtest/hyperopts without this option. Once you settle on a baseline set of options, do some final optimizations with protections on.
