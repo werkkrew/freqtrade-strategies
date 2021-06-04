@@ -2,6 +2,8 @@
 
 **Solipsis is no longer the strategy I am using and will likely no longer be maintained.**
 
+**THE DEFAULT PARAMETERS ARE INTENTIONALLY BAD, HYPEROPTING THIS STRATEGY IS CONSISTERED REQUIRED.  SEE NOTES BELOW**
+
 ## About Solipsis
 
 Solipsis is an evolution of the `Schism` series found in the `old/` folder. The basic idea was to override the Freqtrade base ROI functionality to stimulate a sticking buy signal to exploit the use of `ignore_roi_if_buy_signal` and stay in trades that are in an upward trend past where the static ROI table would have sold without having to design a really strong sell signal. This evolved into several other things using active trade data.
